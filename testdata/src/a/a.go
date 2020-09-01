@@ -23,6 +23,6 @@ func main() {
 	c.SetValues(list)
 	fmt.Println(c)
 	// その関数の引数に渡したスライスがあとで要素が変更されている
-	list[1] = "tenntenn" // want "WARN"
+	list[1] = "tenntenn"
 	fmt.Println(c)
 }
