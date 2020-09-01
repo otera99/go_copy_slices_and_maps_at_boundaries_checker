@@ -2,6 +2,7 @@ package go_copy_slices_and_maps_at_boundaries_checker
 
 import (
 	"go/ast"
+	"go/types"
 	"fmt"
 
 	"golang.org/x/tools/go/analysis"
@@ -21,11 +22,20 @@ var Analyzer = &analysis.Analyzer{
 	},
 }
 
+func under(t types.Type) types.Type {
+	if named, _ := t.(*types.Named); named != nil {
+		return under(named.Underlying())
+	}
+	return t
+}
+
 func run(pass *analysis.Pass) (interface{}, error) {
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 
 	nodeFilter := []ast.Node{
 		(*ast.FuncDecl)(nil),
+		(*ast.CallExpr)(nil),
+		(*ast.AssignStmt)(nil),
 	}
 
 	mFunc := map[string]bool{}
@@ -41,7 +51,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					if rev == nil {
 						continue
 					}
-					fmt.Println(rev)
+					//fmt.Println(rev)
 				}
 			}
 
@@ -51,7 +61,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				switch u := stmt.(type) {
 				case *ast.AssignStmt:
 					if u.Lhs != nil && u.Rhs != nil {
-						fmt.Println(u.Lhs[0])
+						//fmt.Println(u.Lhs[0])
 					}
 				}
 			}
@@ -64,11 +74,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		switch t := n.(type) {
 		case *ast.CallExpr:
-			
+			for _, arg := range t.Args {
+				fmt.Println(arg)
+			}
 		case *ast.AssignStmt:
-			fmt.Println(t)
+			//fmt.Println(t)
 			if t.Lhs != nil && t.Rhs != nil {
-				fmt.Println(t.Lhs[0])
+				//fmt.Println(t.Lhs[0])
 			}
 		}
 	})
