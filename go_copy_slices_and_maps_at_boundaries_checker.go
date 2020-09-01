@@ -50,7 +50,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				// fmt.Println(stmt)
 				switch u := stmt.(type) {
 				case *ast.AssignStmt:
-					fmt.Println(u.Lhs[0])
+					if u.Lhs != nil && u.Rhs != nil {
+						fmt.Println(u.Lhs[0])
+					}
 				}
 			}
 			mFunc[t.Name.Name] = check
@@ -61,8 +63,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	// その関数の引数に渡したスライスもしくはマップがあとで要素が変更されてたら警告するパート
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		switch t := n.(type) {
+		case *ast.CallExpr:
+			
 		case *ast.AssignStmt:
 			fmt.Println(t)
+			if t.Lhs != nil && t.Rhs != nil {
+				fmt.Println(t.Lhs[0])
+			}
 		}
 	})
 

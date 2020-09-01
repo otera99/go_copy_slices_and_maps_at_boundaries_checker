@@ -11,5 +11,7 @@ import (
 func TestAnalyzer(t *testing.T) {
 	testdata := analysistest.TestData()
 	analysistest.Run(t, testdata, go_copy_slices_and_maps_at_boundaries_checker.Analyzer, "a")
+	analysistest.Run(t, testdata, go_copy_slices_and_maps_at_boundaries_checker.Analyzer, "b")
+	analysistest.Run(t, testdata, go_copy_slices_and_maps_at_boundaries_checker.Analyzer, "c")
 }
 

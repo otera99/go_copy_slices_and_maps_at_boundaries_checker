@@ -4,23 +4,21 @@ import (
 	"fmt"
 )
 
-type Container struct {
+type Foo struct {
 	Values []string
 }
 
-func (c *Container) SetValues(values []string) {
-	// 正しい書き方をしている場合
-	vs := make([]string, len(values))
-	copy(vs, values)
-	c.Values = vs
-	// c.Values = values
+func (f *Foo) SetVal(s []string) {
+	f.Values = func()[]string {
+		return s
+	}()
 }
 
 func main() {
-	c := &Container{}
-	list := []string{"hello", "world"}
-	c.SetValues(list)
-	fmt.Println(c)
-	list[1] = "tenntenn"
-	fmt.Println(c)
+	f := &Foo{}
+	v := []string{"hello", "world"}
+	f.SetVal(v)
+	fmt.Println(f)
+	v[1] = "tenntenn"
+	fmt.Println(f)
 }
