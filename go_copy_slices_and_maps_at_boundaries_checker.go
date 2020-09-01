@@ -3,6 +3,7 @@ package go_copy_slices_and_maps_at_boundaries_checker
 import (
 	"go/ast"
 	"go/types"
+	"go/token"
 	"fmt"
 
 	"golang.org/x/tools/go/analysis"
@@ -39,7 +40,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	mFunc := map[string]bool{}
-	// mSlice := map[string]bool{}
+	mSlice := map[string]bool{}
 
 	// 引数のスライスで受け取ったスライスもしくはマップがそのままフィールドに保存されている関数があるかを調べるパート
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
@@ -74,13 +75,30 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		switch t := n.(type) {
 		case *ast.CallExpr:
-			for _, arg := range t.Args {
-				fmt.Println(arg)
+			funcName := ""
+			switch u := t.Fun.(type) {
+			case *ast.BasicLit :
+				funcName = u.Value
+			}
+			if(mFunc[funcName]) {
+				for _, arg := range t.Args {
+					fmt.Println(arg)
+				}
 			}
 		case *ast.AssignStmt:
-			//fmt.Println(t)
 			if t.Lhs != nil && t.Rhs != nil {
-				//fmt.Println(t.Lhs[0])
+				switch u := t.Lhs[0].(type) {
+				case *ast.IndexExpr :
+					switch v := u.X.(type) {
+					case *ast.BasicLit :
+						if v.Kind == token.STRING {
+							sliceName := v.Value
+							if(mSlice[sliceName]) {
+								pass.Reportf(v.Pos(), "WARN")
+							}
+						}
+					}
+				}
 			}
 		}
 	})
