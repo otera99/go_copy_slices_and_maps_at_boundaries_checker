@@ -72,6 +72,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 							switch w := v.X.(type) {
 							case *ast.Ident :
 								stObj = pass.TypesInfo.ObjectOf(w)
+							case *ast.FuncLit :
+								// b.go, e.goに対応するためのコードを書く
 							}
 						}
 						// u.Rhs[0] が *ast.CallExpr のエッヂケースにも対応する(testdate の b.go)
