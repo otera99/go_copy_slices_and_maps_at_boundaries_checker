@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/types"
 	"fmt"
+	"reflect"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
@@ -22,6 +23,11 @@ var Analyzer = &analysis.Analyzer{
 	},
 }
 
+type Pair struct {
+	Func types.Object
+	ArgNum int
+}
+
 func run(pass *analysis.Pass) (interface{}, error) {
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 
@@ -38,15 +44,25 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		switch t := n.(type) {
 		case *ast.FuncDecl:
-			if t.Recv != nil {
-				for _, rev := range t.Recv.List {
-					// sliceがあったらメモメモ
-					if rev == nil {
-						continue
+			if t.Recv != nil && t.Recv.List != nil {
+				fmt.Println(reflect.TypeOf(t.Recv.List[0].Type))
+				switch u := t.Recv.List[0].Type.(type) {
+				case *ast.StarExpr :
+					switch v := u.X.(type) {
+					case *ast.Ident :
+						recvObj := pass.TypesInfo.ObjectOf(v)
+						fmt.Println(recvObj)
 					}
-					//fmt.Println(rev)
 				}
 			}
+			// mArgUsed := map[types.Object]bool{}
+			// mArgNum := map[types.Object]int{} 
+			// for i, arg := range t.Type.Params.List {
+			// 	if arg.Names != nil {
+
+			// 	}
+			// 	fmt.Println(arg)
+			// }
 
 			check := false
 			for _, stmt := range t.Body.List {
@@ -74,19 +90,24 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			switch u := t.Fun.(type) {
 			case *ast.SelectorExpr :
 				obj := pass.TypesInfo.ObjectOf(u.Sel)
-				fmt.Println(obj)
+				//fmt.Println(obj)
 				if(mFunc[obj]) {
 					// 処理を書く
+					for _, arg := range t.Args {
+						fmt.Println(arg)
+					}
 				}
 			}
 		case *ast.AssignStmt:
 			if t.Lhs != nil && t.Rhs != nil {
 				switch u := t.Lhs[0].(type) {
 				case *ast.IndexExpr :
-					obj := pass.TypesInfo.ObjectOf(u.X.(*ast.Ident))
-					// fmt.Println(obj)
-					if(mSlice[obj]) {
-						pass.Reportf(u.Pos(), "WARN")
+					switch v := u.X.(type) {
+					case *ast.Ident :
+						obj :=  pass.TypesInfo.ObjectOf(v)
+						if(mSlice[obj]) {
+							pass.Reportf(u.Pos(), "WARN")
+						}
 					}
 				}
 			}
