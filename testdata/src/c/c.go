@@ -19,6 +19,6 @@ func main() {
 	u := c.SetValues(list)
 	fmt.Println(u)
 	fmt.Println(c)
-	list[1] = "tenntenn"
+	list[1] = "tenntenn" // want "WARN"
 	fmt.Println(c)
 }

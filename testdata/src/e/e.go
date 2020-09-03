@@ -1,4 +1,4 @@
-package b
+package e
 
 import (
 	"fmt"
@@ -10,7 +10,8 @@ type Foo struct {
 
 func (f *Foo) SetVal(s []string) {
 	f.Values = func()[]string {
-		return s
+	        t := s
+		return t
 	}()
 }
 

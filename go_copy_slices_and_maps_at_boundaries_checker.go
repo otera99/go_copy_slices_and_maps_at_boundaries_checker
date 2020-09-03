@@ -3,8 +3,6 @@ package go_copy_slices_and_maps_at_boundaries_checker
 import (
 	"go/ast"
 	"go/types"
-	"go/token"
-	"fmt"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
@@ -23,11 +21,9 @@ var Analyzer = &analysis.Analyzer{
 	},
 }
 
-func under(t types.Type) types.Type {
-	if named, _ := t.(*types.Named); named != nil {
-		return under(named.Underlying())
-	}
-	return t
+type Pair struct {
+	Func types.Object
+	ArgNum int
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
@@ -39,36 +35,61 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		(*ast.AssignStmt)(nil),
 	}
 
-	mFunc := map[string]bool{}
-	mSlice := map[string]bool{}
+	mFunc := map[types.Object]bool{}
+	mSlice := map[types.Object]bool{}
+	mPair := map[Pair]bool{}
 
 	// 引数のスライスで受け取ったスライスもしくはマップがそのままフィールドに保存されている関数があるかを調べるパート
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		switch t := n.(type) {
 		case *ast.FuncDecl:
-			if t.Recv != nil {
-				for _, rev := range t.Recv.List {
-					// sliceがあったらメモメモ
-					if rev == nil {
-						continue
-					}
-					//fmt.Println(rev)
+			funcObj := pass.TypesInfo.ObjectOf(t.Name)
+
+			var recvObj types.Object
+			if t.Recv != nil && t.Recv.List != nil {
+				if t.Recv.List[0].Names != nil {
+					recvObj = pass.TypesInfo.ObjectOf(t.Recv.List[0].Names[0])
+				}
+			}
+			mArgUsed := map[types.Object]bool{}
+			mArgNum := map[types.Object]int{} 
+			for i, arg := range t.Type.Params.List {
+				if arg.Names != nil {
+					argObj := pass.TypesInfo.ObjectOf(arg.Names[0])
+					mArgUsed[argObj] = true
+					mArgNum[argObj] = i
 				}
 			}
 
 			check := false
 			for _, stmt := range t.Body.List {
-				// fmt.Println(stmt)
 				switch u := stmt.(type) {
 				case *ast.AssignStmt:
 					if u.Lhs != nil && u.Rhs != nil {
-						switch v := y.Lhs[0].(type) {
-							
+						var stObj types.Object
+						switch v := u.Lhs[0].(type) {
+						case *ast.SelectorExpr :
+							switch w := v.X.(type) {
+							case *ast.Ident :
+								stObj = pass.TypesInfo.ObjectOf(w)
+							case *ast.FuncLit :
+								// b.go, e.goに対応するためのコードを書く
+							}
+						}
+						// u.Rhs[0] が *ast.CallExpr のエッヂケースにも対応する(testdate の b.go)
+						var sliceObj types.Object
+						switch v := u.Rhs[0].(type) {
+						case *ast.Ident :
+							sliceObj = pass.TypesInfo.ObjectOf(v)
+						}
+						if stObj != nil && sliceObj != nil && recvObj == stObj && mArgUsed[sliceObj] {
+							check = true
+							mPair[Pair{funcObj, mArgNum[sliceObj]}] = true
 						}
 					}
 				}
 			}
-			mFunc[t.Name.Name] = check
+			mFunc[funcObj] = check
 		}
 	})
 
@@ -77,14 +98,19 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		switch t := n.(type) {
 		case *ast.CallExpr:
-			funcName := ""
 			switch u := t.Fun.(type) {
-			case *ast.BasicLit :
-				funcName = u.Value
-			}
-			if(mFunc[funcName]) {
-				for _, arg := range t.Args {
-					fmt.Println(arg)
+			case *ast.SelectorExpr :
+				funcObj := pass.TypesInfo.ObjectOf(u.Sel)
+				if(mFunc[funcObj]) {
+					for i, arg := range t.Args {
+						if mPair[Pair{funcObj, i}] {
+							switch v := arg.(type) {
+							case *ast.Ident :
+								sliceObj := pass.TypesInfo.ObjectOf(v)
+								mSlice[sliceObj] = true
+							}
+						}
+					}
 				}
 			}
 		case *ast.AssignStmt:
@@ -92,12 +118,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				switch u := t.Lhs[0].(type) {
 				case *ast.IndexExpr :
 					switch v := u.X.(type) {
-					case *ast.BasicLit :
-						if v.Kind == token.STRING {
-							sliceName := v.Value
-							if(mSlice[sliceName]) {
-								pass.Reportf(v.Pos(), "WARN")
-							}
+					case *ast.Ident :
+						obj :=  pass.TypesInfo.ObjectOf(v)
+						if(mSlice[obj]) {
+							pass.Reportf(u.Pos(), "WARN")
 						}
 					}
 				}
