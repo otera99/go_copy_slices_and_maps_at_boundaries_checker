@@ -3,7 +3,7 @@ package go_copy_slices_and_maps_at_boundaries_checker
 import (
 	"go/ast"
 	"go/types"
-	"go/token"
+	// "go/token"
 	"fmt"
 
 	"golang.org/x/tools/go/analysis"
@@ -39,67 +39,100 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		(*ast.AssignStmt)(nil),
 	}
 
-	mFunc := map[string]bool{}
-	mSlice := map[string]bool{}
+	// mFunc := map[string]bool{}
+	// mSlice := map[string]bool{}
 
-	// 引数のスライスで受け取ったスライスもしくはマップがそのままフィールドに保存されている関数があるかを調べるパート
+	// // 引数のスライスで受け取ったスライスもしくはマップがそのままフィールドに保存されている関数があるかを調べるパート
+	// inspect.Preorder(nodeFilter, func(n ast.Node) {
+	// 	switch t := n.(type) {
+	// 	case *ast.FuncDecl:
+	// 		if t.Recv != nil {
+	// 			for _, rev := range t.Recv.List {
+	// 				// sliceがあったらメモメモ
+	// 				if rev == nil {
+	// 					continue
+	// 				}
+	// 				//fmt.Println(rev)
+	// 			}
+	// 		}
+
+	// 		check := false
+	// 		for _, stmt := range t.Body.List {
+	// 			// fmt.Println(stmt)
+	// 			switch u := stmt.(type) {
+	// 			case *ast.AssignStmt:
+	// 				if u.Lhs != nil && u.Rhs != nil {
+	// 					switch v := y.Lhs[0].(type) {
+							
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 		mFunc[t.Name.Name] = check
+	// 	}
+	// })
+
+
+	// // その関数の引数に渡したスライスもしくはマップがあとで要素が変更されてたら警告するパート
+	// inspect.Preorder(nodeFilter, func(n ast.Node) {
+	// 	switch t := n.(type) {
+	// 	case *ast.CallExpr:
+	// 		funcName := ""
+	// 		switch u := t.Fun.(type) {
+	// 		case *ast.BasicLit :
+	// 			funcName = u.Value
+	// 		}
+	// 		if(mFunc[funcName]) {
+	// 			for _, arg := range t.Args {
+	// 				fmt.Println(arg)
+	// 			}
+	// 		}
+	// 	case *ast.AssignStmt:
+	// 		if t.Lhs != nil && t.Rhs != nil {
+	// 			switch u := t.Lhs[0].(type) {
+	// 			case *ast.IndexExpr :
+	// 				switch v := u.X.(type) {
+	// 				case *ast.BasicLit :
+	// 					if v.Kind == token.STRING {
+	// 						sliceName := v.Value
+	// 						if(mSlice[sliceName]) {
+	// 							pass.Reportf(v.Pos(), "WARN")
+	// 						}
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// })
+
+	/*
+	returning slices and maps
+	*/
+
+	mNotGoodFunc := map[types.Object]bool{}
+
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		switch t := n.(type) {
 		case *ast.FuncDecl:
-			if t.Recv != nil {
-				for _, rev := range t.Recv.List {
-					// sliceがあったらメモメモ
-					if rev == nil {
-						continue
-					}
-					//fmt.Println(rev)
-				}
-			}
-
+			funcObj := pass.TypesInfo.ObjectOf(t.Name)
 			check := false
 			for _, stmt := range t.Body.List {
-				// fmt.Println(stmt)
-				switch u := stmt.(type) {
-				case *ast.AssignStmt:
-					if u.Lhs != nil && u.Rhs != nil {
-						switch v := y.Lhs[0].(type) {
-							
-						}
-					}
-				}
+				fmt.Println(stmt)
+				// switch u := stmt.(type) {
+				// }
 			}
-			mFunc[t.Name.Name] = check
+			mNotGoodFunc[funcObj] = check
 		}
 	})
 
-
-	// その関数の引数に渡したスライスもしくはマップがあとで要素が変更されてたら警告するパート
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		switch t := n.(type) {
-		case *ast.CallExpr:
-			funcName := ""
+		case *ast.CallExpr :
 			switch u := t.Fun.(type) {
-			case *ast.BasicLit :
-				funcName = u.Value
-			}
-			if(mFunc[funcName]) {
-				for _, arg := range t.Args {
-					fmt.Println(arg)
-				}
-			}
-		case *ast.AssignStmt:
-			if t.Lhs != nil && t.Rhs != nil {
-				switch u := t.Lhs[0].(type) {
-				case *ast.IndexExpr :
-					switch v := u.X.(type) {
-					case *ast.BasicLit :
-						if v.Kind == token.STRING {
-							sliceName := v.Value
-							if(mSlice[sliceName]) {
-								pass.Reportf(v.Pos(), "WARN")
-							}
-						}
-					}
+			case *ast.SelectorExpr :
+				funcObj := pass.TypesInfo.ObjectOf(u.Sel)
+				if(mNotGoodFunc[funcObj]) {
+					pass.Reportf(u.Pos(), "WARN")
 				}
 			}
 		}
