@@ -55,14 +55,21 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					}
 				}
 			}
-			// mArgUsed := map[types.Object]bool{}
-			// mArgNum := map[types.Object]int{} 
-			// for i, arg := range t.Type.Params.List {
-			// 	if arg.Names != nil {
-
-			// 	}
-			// 	fmt.Println(arg)
-			// }
+			mArgUsed := map[types.Object]bool{}
+			mArgNum := map[types.Object]int{} 
+			for i, arg := range t.Type.Params.List {
+				fmt.Println(reflect.TypeOf(arg.Type))
+				switch u := arg.Type.(type) {
+				case *ast.ArrayType :
+					switch v := u.Elt.(type) {
+					case *ast.Ident :
+						argObj := pass.TypesInfo.ObjectOf(v)
+						// fmt.Println(argObj)
+						mArgUsed[argObj] = true
+						mArgNum[argObj] = i
+					}
+				}
+			}
 
 			check := false
 			for _, stmt := range t.Body.List {
