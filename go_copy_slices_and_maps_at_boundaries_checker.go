@@ -3,8 +3,6 @@ package go_copy_slices_and_maps_at_boundaries_checker
 import (
 	"go/ast"
 	"go/types"
-	"fmt"
-	"reflect"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
@@ -49,17 +47,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 			var recvObj types.Object
 			if t.Recv != nil && t.Recv.List != nil {
-				// fmt.Println(reflect.TypeOf(t.Recv.List[0].Type))
 				if t.Recv.List[0].Names != nil {
 					recvObj = pass.TypesInfo.ObjectOf(t.Recv.List[0].Names[0])
 				}
 			}
-			fmt.Println(recvObj)
 			mArgUsed := map[types.Object]bool{}
 			mArgNum := map[types.Object]int{} 
 			for i, arg := range t.Type.Params.List {
-				fmt.Print(arg)
-				fmt.Println(reflect.TypeOf(arg.Type))
 				if arg.Names != nil {
 					argObj := pass.TypesInfo.ObjectOf(arg.Names[0])
 					mArgUsed[argObj] = true
@@ -69,31 +63,23 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 			check := false
 			for _, stmt := range t.Body.List {
-				// fmt.Println(stmt)
 				switch u := stmt.(type) {
 				case *ast.AssignStmt:
 					if u.Lhs != nil && u.Rhs != nil {
-						// fmt.Println(u.Lhs[0])
-						// fmt.Println(reflect.TypeOf(u.Lhs[0]))
 						var stObj types.Object
 						switch v := u.Lhs[0].(type) {
 						case *ast.SelectorExpr :
-							//fmt.Println(reflect.TypeOf(v.X))
 							switch w := v.X.(type) {
 							case *ast.Ident :
 								stObj = pass.TypesInfo.ObjectOf(w)
-								fmt.Println(stObj)
 							}
 						}
 						// u.Rhs[0] が *ast.CallExpr のエッヂケースにも対応する(testdate の b.go)
 						var sliceObj types.Object
-						// fmt.Println(u.Rhs[0])
-					    fmt.Println(reflect.TypeOf(u.Rhs[0]))
 						switch v := u.Rhs[0].(type) {
 						case *ast.Ident :
 							sliceObj = pass.TypesInfo.ObjectOf(v)
 						}
-						fmt.Println(sliceObj)
 						if stObj != nil && sliceObj != nil && recvObj == stObj && mArgUsed[sliceObj] {
 							check = true
 							mPair[Pair{funcObj, mArgNum[sliceObj]}] = true
@@ -101,7 +87,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					}
 				}
 			}
-			// fmt.Println(obj)
 			mFunc[funcObj] = check
 		}
 	})
@@ -114,12 +99,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			switch u := t.Fun.(type) {
 			case *ast.SelectorExpr :
 				funcObj := pass.TypesInfo.ObjectOf(u.Sel)
-				//fmt.Println(funcObj)
 				if(mFunc[funcObj]) {
-					// 処理を書く
 					for i, arg := range t.Args {
-						fmt.Println(arg)
-						fmt.Println(i)
 						if mPair[Pair{funcObj, i}] {
 							switch v := arg.(type) {
 							case *ast.Ident :
