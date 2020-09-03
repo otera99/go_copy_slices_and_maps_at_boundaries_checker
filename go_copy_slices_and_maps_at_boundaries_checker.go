@@ -62,7 +62,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				switch u := stmt.(type) {
 				case *ast.AssignStmt:
 					if u.Lhs != nil && u.Rhs != nil {
-						//fmt.Println(u.Lhs[0])
+						switch v := y.Lhs[0].(type) {
+							
+						}
 					}
 				}
 			}

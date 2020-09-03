@@ -26,7 +26,7 @@ func main() {
 	list := []string{"hello", "world"}
 	list1 := []string{"hello", "world"}
 	c.SetValues(list)
-	d.CorrectSetValues(list)
+	d.CorrectSetValues(list1)
 	fmt.Println(c)
 	// その関数の引数に渡したスライスがあとで要素が変更されている
 	list[1] = "tenntenn"
