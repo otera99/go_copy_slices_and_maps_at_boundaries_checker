@@ -4,7 +4,8 @@ import (
 	"go/ast"
 	"go/types"
 	// "go/token"
-	"fmt"
+	// "fmt"
+	// "reflect"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
@@ -115,11 +116,33 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		switch t := n.(type) {
 		case *ast.FuncDecl:
 			funcObj := pass.TypesInfo.ObjectOf(t.Name)
+		    var recvObj types.Object
+			if t.Recv != nil && t.Recv.List != nil {
+				if t.Recv.List[0].Names != nil {
+					recvObj = pass.TypesInfo.ObjectOf(t.Recv.List[0].Names[0])
+				}
+			}
 			check := false
+			unlock := false
 			for _, stmt := range t.Body.List {
-				fmt.Println(stmt)
-				// switch u := stmt.(type) {
-				// }
+				switch u := stmt.(type) {
+				case *ast.ReturnStmt :
+					ret := u.Results
+					if ret != nil && unlock {
+						for _, res := range ret {
+							switch v := res.(type) {
+							case *ast.SelectorExpr :
+								switch w := v.X.(type) {
+								case *ast.Ident :
+									stObj := pass.TypesInfo.ObjectOf(w)
+									if recvObj == stObj && v.Sel != nil {
+										// v.Selがmap or sliceならcheck = trueにする
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 			mNotGoodFunc[funcObj] = check
 		}
