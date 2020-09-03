@@ -111,18 +111,25 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		switch t := n.(type) {
 		case *ast.CallExpr:
-			// switch u := t.Fun.(type) {
-			// case *ast.SelectorExpr :
-			// 	obj := pass.TypesInfo.ObjectOf(u.Sel)
-			// 	//fmt.Println(obj)
-			// 	if(mFunc[obj]) {
-			// 		// 処理を書く
-			// 		for i, arg := range t.Args {
-			// 			fmt.Println(arg)
-			// 			// fmt.Println(i)
-			// 		}
-			// 	}
-			// }
+			switch u := t.Fun.(type) {
+			case *ast.SelectorExpr :
+				funcObj := pass.TypesInfo.ObjectOf(u.Sel)
+				//fmt.Println(funcObj)
+				if(mFunc[funcObj]) {
+					// 処理を書く
+					for i, arg := range t.Args {
+						fmt.Println(arg)
+						fmt.Println(i)
+						if mPair[Pair{funcObj, i}] {
+							switch v := arg.(type) {
+							case *ast.Ident :
+								sliceObj := pass.TypesInfo.ObjectOf(v)
+								mSlice[sliceObj] = true
+							}
+						}
+					}
+				}
+			}
 		case *ast.AssignStmt:
 			if t.Lhs != nil && t.Rhs != nil {
 				switch u := t.Lhs[0].(type) {
