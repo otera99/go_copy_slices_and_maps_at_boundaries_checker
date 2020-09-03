@@ -22,7 +22,7 @@ var Analyzer = &analysis.Analyzer{
 }
 
 type Pair struct {
-	Func types.Object
+	Func   types.Object
 	ArgNum int
 }
 
@@ -68,16 +68,16 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					if u.Lhs != nil && u.Rhs != nil {
 						var stObj types.Object
 						switch v := u.Lhs[0].(type) {
-						case *ast.SelectorExpr :
+						case *ast.SelectorExpr:
 							switch w := v.X.(type) {
-							case *ast.Ident :
+							case *ast.Ident:
 								stObj = pass.TypesInfo.ObjectOf(w)
 							}
 						}
 						// u.Rhs[0] が *ast.CallExpr のエッヂケースにも対応する(testdate の b.go)
 						var sliceObj types.Object
 						switch v := u.Rhs[0].(type) {
-						case *ast.Ident :
+						case *ast.Ident:
 							sliceObj = pass.TypesInfo.ObjectOf(v)
 						}
 						if stObj != nil && sliceObj != nil && recvObj == stObj && mArgUsed[sliceObj] {
@@ -97,13 +97,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		switch t := n.(type) {
 		case *ast.CallExpr:
 			switch u := t.Fun.(type) {
-			case *ast.SelectorExpr :
+			case *ast.SelectorExpr:
 				funcObj := pass.TypesInfo.ObjectOf(u.Sel)
-				if(mFunc[funcObj]) {
+				if mFunc[funcObj] {
 					for i, arg := range t.Args {
 						if mPair[Pair{funcObj, i}] {
 							switch v := arg.(type) {
-							case *ast.Ident :
+							case *ast.Ident:
 								sliceObj := pass.TypesInfo.ObjectOf(v)
 								mSlice[sliceObj] = true
 							}
@@ -114,11 +114,11 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		case *ast.AssignStmt:
 			if t.Lhs != nil && t.Rhs != nil {
 				switch u := t.Lhs[0].(type) {
-				case *ast.IndexExpr :
+				case *ast.IndexExpr:
 					switch v := u.X.(type) {
-					case *ast.Ident :
+					case *ast.Ident:
 						obj :=  pass.TypesInfo.ObjectOf(v)
-						if(mSlice[obj]) {
+						if mSlice[obj] {
 							pass.Reportf(u.Pos(), "WARN")
 						}
 					}
