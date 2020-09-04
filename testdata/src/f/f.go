@@ -32,7 +32,7 @@ func main() {
 	fmt.Println(c)
 	fmt.Println(d)
 	// その関数の引数に渡したスライスがあとで要素が変更されている
-	m["Foo"] = 3  // want "WARN: A slice taken as an argument and stored in a field is rewritten."
+	m["Foo"] = 3  // want "WARN: Slice or map taken as an argument and stored in a field may be rewritten."
 	m1["Foo"] = 3
 	fmt.Println(c)
 	fmt.Println(d)
