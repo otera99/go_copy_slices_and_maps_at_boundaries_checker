@@ -10,7 +10,7 @@ This project is inspired by [knsh14](https://github.com/knsh14)'s idea, who is a
 ## Description
 https://github.com/knsh14/uber-style-guide-ja/blob/master/guide.md#copy-slices-and-maps-at-boundaries にあるような、スライスやマップは内部でデータへのポインタが含まれていることを考慮せずにコピーしているコードに対してデータが書き換わる可能性がある箇所で警告をだすツールをskeletonを用いて作りました。
 
-### example
+### example1
 ```
 package main
 
@@ -38,6 +38,38 @@ func main() {
 	list[1] = "tenntenn" //ここで警告を出す
 	fmt.Println(c)
 }
+```
+
+### example2
+```
+package main
+
+import (
+	"sync"
+	"fmt"
+)
+
+type Stats struct {
+	mu sync.Mutex
+	counters map[string]int
+}
+
+// Snapshot returns the current stats.
+func (s *Stats) Snapshot() map[string]int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.counters
+}
+
+func main() {
+	stats := &Stats{}
+	// snapshot は mutex で守られない
+	// レースコンディションが起きる
+	snapshot := stats.Snapshot() //ここで警告を出す
+    internally without being made public may be changed."
+	fmt.Println(snapshot)
+} 
 ```
 
 ## install
