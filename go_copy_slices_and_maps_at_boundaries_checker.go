@@ -75,14 +75,19 @@ func run(pass *analysis.Pass) (interface{}, error) {
 							}
 						}
 						// u.Rhs[0] が *ast.CallExpr のエッヂケースにも対応する(testdate の b.go)
-						var sliceObj types.Object
+						var sliceOrMapObj types.Object
 						switch v := u.Rhs[0].(type) {
 						case *ast.Ident:
-							sliceObj = pass.TypesInfo.ObjectOf(v)
+							switch pass.TypesInfo.TypeOf(v).(type) {
+							case *types.Slice:
+								sliceOrMapObj = pass.TypesInfo.ObjectOf(v)
+							case *types.Map:
+								sliceOrMapObj = pass.TypesInfo.ObjectOf(v)
+							}
 						}
-						if stObj != nil && sliceObj != nil && recvObj == stObj && mArgUsed[sliceObj] {
+						if stObj != nil && sliceOrMapObj != nil && recvObj == stObj && mArgUsed[sliceOrMapObj] {
 							check = true
-							mPair[Pair{funcObj, mArgNum[sliceObj]}] = true
+							mPair[Pair{funcObj, mArgNum[sliceOrMapObj]}] = true
 						}
 					}
 				}
