@@ -36,7 +36,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	mFunc := map[types.Object]bool{}
-	mSlice := map[types.Object]bool{}
+	mSliceOrMap := map[types.Object]bool{}
 	mPair := map[Pair]bool{}
 
 	// 引数のスライスで受け取ったスライスもしくはマップがそのままフィールドに保存されている関数があるかを調べるパート
@@ -96,7 +96,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		}
 	})
 
-
 	// その関数の引数に渡したスライスもしくはマップがあとで要素が変更されてたら警告するパート
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		switch t := n.(type) {
@@ -109,8 +108,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 						if mPair[Pair{funcObj, i}] {
 							switch v := arg.(type) {
 							case *ast.Ident:
-								sliceObj := pass.TypesInfo.ObjectOf(v)
-								mSlice[sliceObj] = true
+								sliceOrMapObj := pass.TypesInfo.ObjectOf(v)
+								mSliceOrMap[sliceOrMapObj] = true
 							}
 						}
 					}
@@ -123,8 +122,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					switch v := u.X.(type) {
 					case *ast.Ident:
 						obj :=  pass.TypesInfo.ObjectOf(v)
-						if mSlice[obj] {
-							pass.Reportf(u.Pos(), "WARN")
+						if mSliceOrMap[obj] {
+							pass.Reportf(u.Pos(), "WARN: A slice taken as an argument and stored in a field is rewritten.")
 						}
 					}
 				}

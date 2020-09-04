@@ -29,7 +29,7 @@ func main() {
 	d.CorrectSetValues(list1)
 	fmt.Println(c)
 	// その関数の引数に渡したスライスがあとで要素が変更されている
-	list[1] = "tenntenn"  // want "WARN"
+	list[1] = "tenntenn"  // want "WARN: A slice taken as an argument and stored in a field is rewritten."
 	list1[1] = "tenntenn"
 	fmt.Println(c)
 }
