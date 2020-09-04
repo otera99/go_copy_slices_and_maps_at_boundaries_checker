@@ -19,6 +19,7 @@ func main() {
 	v := []string{"hello", "world"}
 	f.SetVal(v)
 	fmt.Println(f)
+	// 未対応だけど、"WARN"をだしたい
 	v[1] = "tenntenn"
 	fmt.Println(f)
 }

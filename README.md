@@ -1,10 +1,44 @@
-実装方針(実装ができたら資料になる予定です)
+# go_copy_slices_and_maps_at_boundaries_checker
+An individual project at mercari summer internship 2020.
 
-引数のスライスで受け取ったスライスがそのままフィールドに保存されている関数がある かつ その関数の引数に渡したスライスがあとで要素が変更されてたら警告したい
+メルカリサマーインターン2020での成果物です。
 
-1. 登場する関数についてmapをつくる
-2. 引数のスライスで受け取ったスライスがそのままフィールドに保存されている関数をみつける
+This project is inspired by [knsh14](https://github.com/knsh14)'s idea, who is an extreamely talented engineer at mercari inc.
 
-1. 登場するスライスについてmapをつくる(初期値は0)
-2. 特定の関数の引数に渡したスライスにたいして、mapのValueを1に変更
-3. スライスの要素の変更を見つけたら、そのスライスに対するmapの値をみて、1ならばWARN
+このプロジェクトの大元のアイデアはメルカリのエンジニアである[knsh14](https://github.com/knsh14)氏によるものです。
+
+## Description
+https://github.com/knsh14/uber-style-guide-ja/blob/master/guide.md#copy-slices-and-maps-at-boundaries にあるような、スライスやマップは内部でデータへのポインタが含まれていることを考慮せずにコピーしているコードに対してデータが書き換わる可能性がある箇所で警告をだすツールをskeletonを用いて作りました。
+
+### example
+```
+package main
+
+import (
+	"fmt"
+)
+
+type Container struct {
+	Values []string
+}
+
+func (c *Container) SetValues(values []string) {
+	// 本当はこう書かないとだめ
+	// vs := make([]string, len(values))
+	// copy(vs, values)
+	// c.Values = vs
+	c.Values = values
+}
+
+func main() {
+	c := &Container{}
+	list := []string{"hello", "world"}
+	c.SetValues(list)
+	fmt.Println(c)
+	list[1] = "tenntenn" //ここで警告を出す
+	fmt.Println(c)
+}
+```
+
+## install
+```go get -u github.com/otera99/go_copy_slices_and_maps_at_boundaries_checker```
