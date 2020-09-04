@@ -19,6 +19,6 @@ func main() {
 	u := c.SetValues(list)
 	fmt.Println(u)
 	fmt.Println(c)
-	list[1] = "tenntenn" // want "WARN: A slice taken as an argument and stored in a field is rewritten."
+	list[1] = "tenntenn" // want "WARN: Slice or map taken as an argument and stored in a field may be rewritten."
 	fmt.Println(c)
 }
