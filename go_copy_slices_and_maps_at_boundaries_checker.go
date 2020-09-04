@@ -4,8 +4,8 @@ import (
 	"go/ast"
 	"go/types"
 	// "go/token"
-	// "fmt"
-	// "reflect"
+	"fmt"
+	"reflect"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
@@ -125,8 +125,27 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			check := false
 			unlock := false
 			for _, stmt := range t.Body.List {
+				// fmt.Println(reflect.TypeOf(stmt))
 				switch u := stmt.(type) {
-				case *ast.ReturnStmt :
+				case *ast.ExprStmt:
+					fmt.Println(reflect.TypeOf(u.X))
+					switch v := u.X.(type) {
+					case *ast.CallExpr:
+						switch w := v.Fun.(type) {
+						case *ast.SelectorExpr:
+							switch x := w.X.(type) {
+							case *ast.SelectorExpr:
+								switch y := x.X.(type) {
+								case *ast.Ident: 
+									stObj := pass.TypesInfo.ObjectOf(y)
+									if recvObj == stObj && w.Sel !=  nil && w.Sel.Name == "Lock" {
+										unlock = true
+									}
+								}
+							}
+						}
+					}
+				case *ast.ReturnStmt:
 					ret := u.Results
 					if ret != nil && unlock {
 						for _, res := range ret {
@@ -136,7 +155,12 @@ func run(pass *analysis.Pass) (interface{}, error) {
 								case *ast.Ident :
 									stObj := pass.TypesInfo.ObjectOf(w)
 									if recvObj == stObj && v.Sel != nil {
-										// v.Selがmap or sliceならcheck = trueにする
+										switch pass.TypesInfo.TypeOf(v.Sel).(type) {
+										case *types.Slice:
+											check = true
+										case *types.Map:
+											check = true
+										}
 									}
 								}
 							}
@@ -152,7 +176,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		switch t := n.(type) {
 		case *ast.CallExpr :
 			switch u := t.Fun.(type) {
-			case *ast.SelectorExpr :
+			case *ast.SelectorExpr:
 				funcObj := pass.TypesInfo.ObjectOf(u.Sel)
 				if(mNotGoodFunc[funcObj]) {
 					pass.Reportf(u.Pos(), "WARN")

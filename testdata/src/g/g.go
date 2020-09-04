@@ -22,6 +22,6 @@ func main() {
 	stats := &Stats{}
 	// snapshot は mutex で守られない
 	// レースコンディションが起きる
-	snapshot := stats.Snapshot()
+	snapshot := stats.Snapshot() // want "WARN"
 	fmt.Println(snapshot)
 }
