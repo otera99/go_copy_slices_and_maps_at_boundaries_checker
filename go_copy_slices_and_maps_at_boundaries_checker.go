@@ -3,9 +3,6 @@ package go_copy_slices_and_maps_at_boundaries_checker
 import (
 	"go/ast"
 	"go/types"
-	// "go/token"
-	"fmt"
-	"reflect"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
@@ -125,10 +122,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			check := false
 			unlock := false
 			for _, stmt := range t.Body.List {
-				// fmt.Println(reflect.TypeOf(stmt))
 				switch u := stmt.(type) {
 				case *ast.ExprStmt:
-					fmt.Println(reflect.TypeOf(u.X))
 					switch v := u.X.(type) {
 					case *ast.CallExpr:
 						switch w := v.Fun.(type) {
